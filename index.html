@@ -130,16 +130,17 @@ var guides=[
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]})}
 function read(k,fallback){try{var v=JSON.parse(localStorage.getItem(k));return v===null?fallback:v}catch(e){return fallback}}
 var plan=read(P,defaults);if(!plan||typeof plan!=='object'||Array.isArray(plan))plan=JSON.parse(JSON.stringify(defaults));
-var migrationKey='projetoV8_plan_migrated_12week_v1';
-if(!localStorage.getItem(migrationKey)){
-var legacy=Array.isArray(plan['1'])&&plan['1'].length===4&&plan['1'][0]==='Supino reto máquina ou halteres'&&Array.isArray(plan['2'])&&plan['2'][0]==='Pulley anterior barra';
-if(legacy){plan=JSON.parse(JSON.stringify(defaults));localStorage.setItem(P,JSON.stringify(plan))}
-localStorage.setItem(migrationKey,'1');
+var legacyFirst=['Supino reto máquina ou halteres','Crucifixo reto','Desenvolvimento máquina','Tríceps pulley'];
+var isOld=Array.isArray(plan['1'])&&plan['1'].length===4&&legacyFirst.every(function(n,i){return plan['1'][i]===n});
+if(isOld){
+try{if(!localStorage.getItem('projetoV8_weekplan_legacy_backup_v1'))localStorage.setItem('projetoV8_weekplan_legacy_backup_v1',JSON.stringify(plan));}catch(e){}
+plan=JSON.parse(JSON.stringify(defaults));
+try{localStorage.setItem(P,JSON.stringify(plan));}catch(e){}
 }
 var now=new Date();$('planDate').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');$('planDay').value=String(now.getDay());
 function guidance(n){var lower=n.toLowerCase();return guides.find(function(g){return lower.includes(g[0])})||['','https://www.acefitness.org/resources/everyone/exercise-library/','Use amplitude confortável, postura estável e execução controlada.']}
 function latest(n){var rows=read(S,[]);if(!Array.isArray(rows))return null;return rows.filter(function(x){return x.name&&x.name.toLowerCase()===n.toLowerCase()}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))||b.id-a.id})[0]}
-function render(){var day=$('planDay').value,arr=Array.isArray(plan[day])?plan[day]:[],host=$('planList');host.innerHTML='';if(!arr.length){host.innerHTML='<div class="card"><p>Sem exercícios programados neste dia. Você pode adicionar um exercício.</p></div>';return}
+function render(){var day=$('planDay').value,arr=Array.isArray(plan[day])?plan[day]:[],host=$('planList');host.innerHTML='';if(!arr.length){host.innerHTML='<div class="card"><p>Dia de recuperação. Sem musculação programada.</p></div>';return}
 arr.forEach(function(n,i){var prev=latest(n),g=guidance(n),card=document.createElement('div');card.className='card';var rows=prev&&Array.isArray(prev.sets)?prev.sets:[];var prevtxt=rows.length?rows.map(function(s){return s.reps+'×'+s.kg+' kg'}).join(' · '):'Nenhuma carga registrada';card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><small>Exercício '+(i+1)+' de '+arr.length+'</small><h2 style="margin:5px 0">'+esc(n)+'</h2></div><button class="primary" data-open>Abrir</button></div><p class="muted">Última sessão: '+esc(prevtxt)+'</p><div data-detail hidden><p><b>Postura:</b> '+esc(g[2])+'</p><a href="'+g[1]+'" target="_blank" rel="noopener noreferrer" style="color:#ff7777">Ver fotos e guia de execução (biblioteca externa) ↗</a><p class="muted">Confira na biblioteca a variação correspondente ao equipamento utilizado.</p><div data-sets></div><div class="actions"><button data-more>+ Série</button><button class="primary" data-save>Salvar exercício</button><button data-remove>Remover da ficha</button></div></div>';
 host.appendChild(card);var detail=card.querySelector('[data-detail]'),sets=card.querySelector('[data-sets]');
 function add(reps,kg){var row=document.createElement('div');row.className='formgrid';row.innerHTML='<div><label>Série '+(sets.children.length+1)+' — repetições</label><input type="number" class="reps" min="1" max="200" value="'+(Number(reps)||12)+'"></div><div><label>Carga (kg)</label><input type="number" class="kg" min="0" step=".5" value="'+(Number(kg)||0)+'"></div>';sets.appendChild(row)}
