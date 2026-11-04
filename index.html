@@ -130,6 +130,12 @@ var guides=[
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]})}
 function read(k,fallback){try{var v=JSON.parse(localStorage.getItem(k));return v===null?fallback:v}catch(e){return fallback}}
 var plan=read(P,defaults);if(!plan||typeof plan!=='object'||Array.isArray(plan))plan=JSON.parse(JSON.stringify(defaults));
+var migrationKey='projetoV8_plan_migrated_12week_v1';
+if(!localStorage.getItem(migrationKey)){
+var legacy=Array.isArray(plan['1'])&&plan['1'].length===4&&plan['1'][0]==='Supino reto máquina ou halteres'&&Array.isArray(plan['2'])&&plan['2'][0]==='Pulley anterior barra';
+if(legacy){plan=JSON.parse(JSON.stringify(defaults));localStorage.setItem(P,JSON.stringify(plan))}
+localStorage.setItem(migrationKey,'1');
+}
 var now=new Date();$('planDate').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');$('planDay').value=String(now.getDay());
 function guidance(n){var lower=n.toLowerCase();return guides.find(function(g){return lower.includes(g[0])})||['','https://www.acefitness.org/resources/everyone/exercise-library/','Use amplitude confortável, postura estável e execução controlada.']}
 function latest(n){var rows=read(S,[]);if(!Array.isArray(rows))return null;return rows.filter(function(x){return x.name&&x.name.toLowerCase()===n.toLowerCase()}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))||b.id-a.id})[0]}
